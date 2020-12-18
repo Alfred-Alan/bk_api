@@ -2,17 +2,18 @@ import base64
 import json
 import logging
 import time
+from datetime import datetime
 
 from config import APP_CODE as app_code, SECRET_KEY as app_secret
 from blueking.component.shortcuts import get_client_by_request, get_client_by_user
+from blueapps.utils.logger import logger
 
-logger = logging.getLogger(__name__)
 
 
 class JOB_API:
-    def __init__(self):
+    def __init__(self,username):
         self.bk_token = ''
-        self.client = get_client_by_user("admin")
+        self.client = get_client_by_user(username)
 
     def reload(self, bk_token, request):
         self.bk_token = bk_token
@@ -48,8 +49,6 @@ class JOB_API:
         #     "ip_list": [{"ip": ip, "bk_cloud_id": 0} for ip in recve_ip],
         # }
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "bk_job_id": bk_job_id,
@@ -61,7 +60,7 @@ class JOB_API:
         if data.get('data', False):
             result['job_instance_id'] = data['data']['job_instance_id']
         else:
-            logger.error(u'执行作业失败：%s' % data['message'])
+            logger.warning(f"{get_now_time()} 执行作业失败：{data['message']} 接口名称(execute_job) 请求参数({kwargs}) 返回参数({data})")
 
         result['message'] = data["message"]
 
@@ -81,8 +80,6 @@ class JOB_API:
         """
         ip_list = [{"bk_cloud_id": 0, "ip": ip} for ip in ips]
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": int(bk_biz_id),
             "script_id": script_id,
@@ -100,7 +97,7 @@ class JOB_API:
             result['result'] = data['result']
             result['job_instance_id'] = data['data']['job_instance_id']
         else:
-            logger.error("快速执行脚本失败：%s" % data['message'])
+            logger.warning(f"{get_now_time()} 快速执行脚本失败：{data['message']} 接口名称(fast_execute_script) 请求参数({kwargs}) 返回参数({data})")
 
         result['message'] = data['message']
         return result
@@ -116,8 +113,6 @@ class JOB_API:
         """
         ip_list = [{"bk_cloud_id": 0, "ip": ip} for ip in ips]
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "db_account_id": db_account_id,
@@ -131,7 +126,7 @@ class JOB_API:
             result["result"] = data['result']
             result["job_instance_id"] = data['data']['job_instance_id']
         else:
-            logger.error("快速执行sql脚本失败：%s" % data['message'])
+            logger.warning(f"{get_now_time()} 快速执行sql脚本失败：{data['message']} 接口名称(fast_execute_sql) 请求参数({kwargs}) 返回参数({data})")
 
         result['message'] = data['message']
 
@@ -155,8 +150,6 @@ class JOB_API:
 
         accept_ips = [{'bk_cloud_id': 0, 'ip': ip} for ip in accept_ips]
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "account": "root",
@@ -171,7 +164,7 @@ class JOB_API:
             result['result'] = data['result']
             result['job_instance_id'] = data['data']['job_instance_id']
         else:
-            logger.error("快速分发文件失败：%s" % data['message'])
+            logger.warning(f"{get_now_time()} 快速分发文件失败：{data['message']} 接口名称(fast_push_file) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -190,8 +183,6 @@ class JOB_API:
         :return:
         """
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
         }
@@ -215,7 +206,7 @@ class JOB_API:
             result['result'] = data['result']
             result['data'] = data['data']
         else:
-            logger.error("获取业务下定时作业信息失败：%s" % data['message'])
+            logger.warning(f"{get_now_time()} 获取业务下定时作业信息失败：{data['message']} 接口名称(get_cron_list) 请求参数({kwargs}) 返回参数({data})")
 
         result['message'] = data['message']
 
@@ -229,16 +220,39 @@ class JOB_API:
         :return:
         """
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "bk_job_id": job_id,
         }
         data = self.client.job.get_job_detail(kwargs)
-        save_json("get_job_detail", data)
+        result = {'result': False, 'message': 'Nothing', "steps": []}
+        if data.get('result', False):
+            result['result'] = data['result']
+            result['name'] = data['data']['name']
+            result['creator'] = data['data']['creator']
+            result['bk_job_id'] = data['data']['bk_job_id']
+            result['create_time'] = make_time(data['data']['create_time'])
+            result['step_num'] = data['data']['step_num']
+            result['global_vars']=[{'name':vars['name'],'id':vars['id'],'type':vars['type']} for vars in data['data']['global_vars']]
+            for step in data['data']['steps']:
+                result['steps'].append({
+                    'account': step['account'],
+                    'creator': step['creator'],
+                    'script_timeout': step['script_timeout'],
+                    'name': step['name'],
+                    'script_content': step['script_content'],
+                    'step_id': step['step_id'],
+                    'script_id': step['script_id'],
+                    'script_param': step['script_param'],
+                    'type': step['type'],
+                    'script_type': step['script_type'],
+                })
+        else:
+            logger.warning(f"{get_now_time()} 查询作业模板详情失败：{data['message']} 接口名称(get_job_detail) 请求参数({kwargs}) 返回参数({data})")
 
-        return data
+        result['message'] = data['message']
+
+        return result
 
     def get_job_instance_log(self, bk_biz_id: int, job_instance_id: int):
         """
@@ -248,8 +262,6 @@ class JOB_API:
         :return:
         """
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "job_instance_id": job_instance_id,
@@ -281,7 +293,7 @@ class JOB_API:
                     "log_content": value,
                 })
         else:
-            logger.error(u'获取作业执行日志失败：%s' % result.get('message'))
+            logger.warning(f"{get_now_time()} 获取作业执行日志失败：{data['message']} 接口名称(get_job_instance_log) 请求参数({kwargs}) 返回参数({data})")
 
         result['message'] = data['message']
         return result
@@ -294,8 +306,6 @@ class JOB_API:
         :return:
         """
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "job_instance_id": job_instance_id,
@@ -304,7 +314,6 @@ class JOB_API:
         count = 0
         while True:
             data = self.client.job.get_job_instance_status(kwargs)
-            save_json("get_job_instance_status", data)
             if data.get("result", False):
                 status = data['data']['job_instance']['status']
                 if int(status) == 2:
@@ -336,7 +345,7 @@ class JOB_API:
                     "step_instance_id": step['step_instances'][0]['step_instance_id']
                 })
         else:
-            logger.error("获取脚本执行详情失败：%s" % data['message'])
+            logger.warning(f"{get_now_time()} 获取脚本执行详情失败：{data['message']} 接口名称(get_job_instance_status) 请求参数({kwargs}) 返回参数({data})")
 
         result['message'] = data['message']
 
@@ -355,8 +364,6 @@ class JOB_API:
         :return:
         """
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "creator": creator,
@@ -373,7 +380,7 @@ class JOB_API:
             result['result'] = data['result']
             result['data'] = data['data']
         else:
-            logger.error(u'查询作业模板失败：%s' % result.get('message'))
+            logger.warning(f"{get_now_time()} 查询作业模板失败：{data['message']} 接口名称(get_job_list) 请求参数({kwargs}) 返回参数({data})")
 
         result['message'] = data['message']
 
@@ -386,8 +393,6 @@ class JOB_API:
         :return:
         """
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id
         }
@@ -398,7 +403,7 @@ class JOB_API:
             result['result'] = data['result']
             result['data'] = data['data']
         else:
-            logger.error(u'查询业务下的执行账号失败：%s' % result.get('message'))
+            logger.warning(f"{get_now_time()} 查询业务下的执行账号失败：{data['message']} 接口名称(get_os_account) 请求参数({kwargs}) 返回参数({data})")
 
         result['message'] = data['message']
 
@@ -411,8 +416,6 @@ class JOB_API:
         :return:
         """
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id
         }
@@ -422,7 +425,7 @@ class JOB_API:
             result['result'] = data['result']
             result['data'] = data['data']
         else:
-            logger.error(u'查询用户有权限的DB帐号列表失败：%s' % result.get('message'))
+            logger.warning(f"{get_now_time()} 查询用户有权限的DB帐号列表失败：{data['message']} 接口名称(get_own_db_account_list) 请求参数({kwargs}) 返回参数({data})")
 
         result['message'] = data['message']
 
@@ -436,8 +439,6 @@ class JOB_API:
         :return:
         """
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "id": id
@@ -449,7 +450,7 @@ class JOB_API:
             result['result'] = data['result']
             result['detail'] = data['data']
         else:
-            logger.error(u'查询脚本详情失败：%s' % result.get('message'))
+            logger.warning(f"{get_now_time()} 查询脚本详情失败：{data['message']} 接口名称(get_script_detail) 请求参数({kwargs}) 返回参数({data})")
 
         result['message'] = data['message']
 
@@ -463,8 +464,6 @@ class JOB_API:
         :return:
         """
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "script_type": script_type,
@@ -486,7 +485,7 @@ class JOB_API:
                     "create_time": script['create_time']
                 })
         else:
-            logger.error("获取脚本列表失败：%s" % data['message'])
+            logger.warning(f"{get_now_time()} 获取脚本列表失败：{data['message']} 接口名称(get_script_list) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
         return result
 
@@ -499,8 +498,6 @@ class JOB_API:
         :return:
         """
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "params": {
@@ -514,7 +511,7 @@ class JOB_API:
             result["result"] = data['result']
             result["status"] = data['data']
         else:
-            logger.error("查询作业步骤的执行状态失败：%s" % data['message'])
+            logger.warning(f"{get_now_time()} 查询作业步骤的执行状态失败：{data['message']} 接口名称(get_step_instance_status) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -529,8 +526,6 @@ class JOB_API:
         :return:
         """
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "bk_job_id": bk_job_id,
@@ -544,7 +539,7 @@ class JOB_API:
             result["result"] = data['result']
             result["cron_id"] = data['data']['cron_id']
         else:
-            logger.error("新建或保存定时作业失败：%s" % data['message'])
+            logger.warning(f"{get_now_time()} 新建或保存定时作业失败：{data['message']} 接口名称(save_cron) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -558,8 +553,6 @@ class JOB_API:
         :return:
         """
         kwargs = {
-            "bk_app_code": app_code,
-            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "cron_status": cron_status,  # 定时状态，1.启动、2.暂停
@@ -572,12 +565,12 @@ class JOB_API:
             result["result"] = data['result']
             result["cron_id"] = data['data']['cron_id']
         else:
-            logger.error("更新定时作业状态失败：%s" % data['message'])
+            logger.warning(f"{get_now_time()} 更新定时作业状态失败：{data['message']} 接口名称(update_cron_status) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
 
-job_api = JOB_API()
+job_api = JOB_API("liujiqing")
 
 def save_json(filename, data):
     with open(f"{filename}.json", "w", encoding="utf-8")as f:
@@ -585,3 +578,6 @@ def save_json(filename, data):
 
 def make_time(time_str):
     return time_str[:time_str.rfind("+") - 1]
+
+def get_now_time():
+    return datetime.strftime(datetime.now(),"%Y-%m-%d %H:%M:%S")
