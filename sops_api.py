@@ -2,6 +2,7 @@ import base64
 import json
 import logging
 import time
+from datetime import datetime
 
 from config import APP_CODE as app_code, SECRET_KEY as app_secret
 from blueking.component.shortcuts import get_client_by_request, get_client_by_user
@@ -10,9 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 class SOPS_API:
-    def __init__(self):
+    def __init__(self,username):
         self.bk_token = ''
-        self.client = get_client_by_user("liujiqing")
+        self.client = get_client_by_user(username)
 
     def reload(self, bk_token, request):
         self.bk_token = bk_token
@@ -46,7 +47,7 @@ class SOPS_API:
             result['activities'] = [{"id": item['id'], "name": item['name'], "stage_name": item['stage_name']} for item
                                     in data['data']['pipeline_tree']['activities'].values()]
         else:
-            logger.error(u'创建周期任务失败：%s' % data['message'])
+            logger.warning(f"{get_now_time()} 创建周期任务失败：{data['message']} 接口名称(create_periodic_task) 请求参数({kwargs}) 返回参数({data})")
 
         result['message'] = data["message"]
 
@@ -72,8 +73,7 @@ class SOPS_API:
             result['result'] = data['result']
             result['task_id'] = data['data']['task_id']
         else:
-            logger.error("创建任务失败：%s" % data['message'])
-
+            logger.warning(f"{get_now_time()} 创建任务失败：{data['message']} 接口名称(create_task) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -101,8 +101,7 @@ class SOPS_API:
             result['create_time'] = make_time(data['data']['create_time'])
             result['id'] = data['data']['id']
         else:
-            logger.error("查询公共流程模板详情失败：%s" % data['message'])
-
+            logger.warning(f"{get_now_time()} 查询公共流程模板详情失败：{data['message']} 接口名称(get_common_template_info) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -122,8 +121,7 @@ class SOPS_API:
             result['result'] = data['result']
             result['data'] = data['data']
         else:
-            logger.error("查询公共模板列表失败：%s" % data['message'])
-
+            logger.warning(f"{get_now_time()} 查询公共模板列表失败：{data['message']} 接口名称(get_common_template_list) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -151,7 +149,7 @@ class SOPS_API:
             result['activities'] = [{"id": item['id'], "name": item['name'], "stage_name": item['stage_name']} for item
                                     in data['data']['pipeline_tree']['activities'].values()]
         else:
-            logger.error("查询周期任务的详情失败：%s" % data['message'])
+            logger.warning(f"{get_now_time()} 查询周期任务的详情失败：{data['message']} 接口名称(get_periodic_task_info) 请求参数({kwargs}) 返回参数({data})")
 
         result['message'] = data['message']
 
@@ -173,8 +171,7 @@ class SOPS_API:
             result['result'] = data['result']
             result['data'] = data['data']
         else:
-            logger.error("查询业务下所有的周期任务失败：%s" % data['message'])
-
+            logger.warning(f"{get_now_time()} 查询业务下所有的周期任务失败：{data['message']} 接口名称(get_periodic_task_list) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -202,7 +199,7 @@ class SOPS_API:
             result['executor'] = data['data']['executor']
             result['task_url'] = data['data']['task_url']
         else:
-            logger.error("查询任务执行详情失败：%s" % data['message'])
+            logger.warning(f"{get_now_time()} 查询任务执行详情失败：{data['message']} 接口名称(get_task_detail) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
         return result
 
@@ -232,7 +229,7 @@ class SOPS_API:
             result['finish_time'] = make_time(data['data']['finish_time'])
             result['job_inst_url'] = data['data']['outputs'][3]['value']
         else:
-            logger.error("查询任务节点执行详情失败：%s" % data['message'])
+            logger.warning(f"{get_now_time()} 查询任务节点执行详情失败：{data['message']} 接口名称(get_task_node_detail) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -285,8 +282,7 @@ class SOPS_API:
                     "start_time": make_time(child['start_time']),
                 })
         else:
-            logger.error("获取任务状态失败：%s" % data['message'])
-
+            logger.warning(f"{get_now_time()} 获取任务状态失败：{data['message']} 接口名称(get_task_status) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -316,8 +312,8 @@ class SOPS_API:
             result['create_time'] = make_time(data['data']['create_time'])
             result['id'] = data['data']['id']
         else:
-            logger.error("查询业务下的单个模板详情失败：%s" % data['message'])
 
+            logger.warning(f"{get_now_time()} 查询业务下的单个模板详情失败：{data['message']} 接口名称(get_template_info) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -340,7 +336,7 @@ class SOPS_API:
             result['result'] = data['result']
             result['count'] = data['data']['count']
         else:
-            logger.error("导入公共流程失败：%s" % data['message'])
+            logger.warning(f"{get_now_time()} 导入公共流程失败：{data['message']} 接口名称(import_common_template) 请求参数({kwargs}) 返回参数({data})")
 
         result['message'] = data['message']
 
@@ -369,8 +365,7 @@ class SOPS_API:
                     "value": item['value'],
                 })
         else:
-            logger.error("修改周期任务的全局参数失败：%s" % data['message'])
-
+            logger.warning(f"{get_now_time()} 修改周期任务的全局参数失败：{data['message']} 接口名称(modify_constants_for_periodic_task) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -395,7 +390,7 @@ class SOPS_API:
             result['cron'] = data['data']['cron']
 
         else:
-            logger.error("修改周期任务的调度策略失败：%s" % data['message'])
+            logger.warning(f"{get_now_time()} 修改周期任务的调度策略失败：{data['message']} 接口名称(modify_cron_for_periodic_task) 请求参数({kwargs}) 返回参数({data})")
 
         result['message'] = data['message']
 
@@ -420,8 +415,8 @@ class SOPS_API:
             result['result'] = data['result']
 
         else:
-            logger.error("回调指定的节点失败：%s" % data['message'])
 
+            logger.warning(f"{get_now_time()} 回调指定的节点失败：{data['message']} 接口名称(node_callback) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -447,8 +442,8 @@ class SOPS_API:
         if data.get("result", False):
             result['result'] = data['result']
         else:
-            logger.error("操作任务失败：%s" % data['message'])
 
+            logger.warning(f"{get_now_time()} 操作任务失败：{data['message']} 接口名称(operate_task) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -473,8 +468,7 @@ class SOPS_API:
             result['total'] = data['data']['total']
             result['data'] = data['data']['groups']
         else:
-            logger.error("查询任务实例分类统计总数失败：%s" % data['message'])
-
+            logger.warning(f"{get_now_time()} 查询任务实例分类统计总数失败：{data['message']} 接口名称(query_task_count) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -498,8 +492,7 @@ class SOPS_API:
             result['result'] = data['result']
             result['enabled'] = data['data']['enabled']
         else:
-            logger.error("设置周期任务激活失败：%s" % data['message'])
-
+            logger.warning(f"{get_now_time()} 设置周期任务激活失败：{data['message']} 接口名称(set_periodic_task_enabled) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
@@ -523,14 +516,13 @@ class SOPS_API:
             result['result'] = data['result']
             result['data'] = data['data']
         else:
-            logger.error("执行任务失败：%s" % data['message'])
-
+            logger.warning(f"{get_now_time()} 执行任务失败：{data['message']} 接口名称(start_task) 请求参数({kwargs}) 返回参数({data})")
         result['message'] = data['message']
 
         return result
 
 
-sops_api = SOPS_API()
+sops_api = SOPS_API("liujiqing")
 
 
 def make_time(time_str):
@@ -540,3 +532,6 @@ def make_time(time_str):
 def save_json(filename, data):
     with open(f"{filename}.json", "w", encoding="utf-8")as f:
         f.write(json.dumps(data, indent=4, ensure_ascii=False))
+
+def get_now_time():
+    return datetime.strftime(datetime.now(),"%Y-%m-%d %H:%M:%S")
