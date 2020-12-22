@@ -1,3 +1,8 @@
+新增monitor_api 蓝鲸监控API (60%)</br> 
+需配合ESB组件使用</br> 
+目前最新ESB不支持蓝鲸监控API</br>
+自行添加蓝鲸监控方法支持使用：https://github.com/Alfred-Alan/blueking
+
 使用方式 
 
 只需要将logic文件放在项目中
@@ -20,10 +25,7 @@ bk_client.reload(bk_token, request)
 result = bk_client.cc.search_business()
 print(result)
 ```
-新增monitor_api 蓝鲸监控API (60%)</br> 
-需配合ESB组件使用</br> 
-目前最新ESB不支持蓝鲸监控API</br>
-自行添加蓝鲸监控方法支持使用：https://github.com/Alfred-Alan/blueking
+
 
 准守返回方式
 ```python
