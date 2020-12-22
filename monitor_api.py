@@ -590,6 +590,360 @@ class MONITOR_API:
 
         return result
 
+    def metadata_create_data_id(self, data_name, etl_config, operator="admin", mq_cluster=0, data_description="",
+                                is_custom_source=True):
+        """
+        创建监控数据源
+        :param data_name:int 	string	是	数据源名称
+        :param etl_config:string	是	清洗模板配置，prometheus exportor对应"prometheus"
+        :param operator:string	是	操作者
+        :param mq_cluster:int	否	数据源使用的消息集群
+        :param data_description:string	否	数据源的具体描述
+        :param is_custom_source:bool 否	是否用户自定义数据源，默认为是
+        :return:result
+        """
+        kwargs = {
+            "bk_token": self.bk_token,
+            "data_name": data_name,
+            "etl_config": etl_config,
+            "operator": operator,
+            "data_description": data_description,
+            "is_custom_source": is_custom_source
+        }
+        if mq_cluster:
+            kwargs['mq_cluster'] = mq_cluster
+
+        data = self.client.monitor.metadata_create_data_id(kwargs)
+        result = {"result": False, "message": "nothing", "bk_data_id": 0}
+
+        if data.get("result", False):
+            result['result'] = data['result']
+            result['bk_data_id'] = data['data']['bk_data_id']
+
+        else:
+            logger.warning(
+                f"{get_now_time()} 创建监控数据源失败：{data['message']} 接口名称(metadata_create_data_id) 请求参数({kwargs}) 返回参数({data})")
+
+        result['message'] = data['message']
+
+        return result
+
+    def metadata_create_result_table(self, bk_biz_id: int, bk_data_id: int, table_id, table_name_zh,
+                                     is_custom_table=True,
+                                     schema_type="fixed", operator="admin", default_storage="influxdb",
+                                     default_storage_config={}, field_list=[]):
+        """
+        创建监控结果表
+        :param bk_biz_id:int	否	业务ID，默认是0全局
+        :param bk_data_id:int	是	数据源ID
+        :param table_id:string	是	结果表ID，格式应该为 库.表(例如，system.cpu)
+        :param table_name_zh:string	是	结果表中文名
+        :param is_custom_table:boolean	是	是否用户自定义结果表
+        :param schema_type:string	是	结果表字段配置方案, free(无schema配置), fixed(固定schema)
+        :param operator:string	是	操作者
+        :param default_storage:string	是	默认存储类型，目前支持influxdb
+        :param default_storage_config:object	否	默认的存储信息, 根据每种不同的存储会有不同的配置内容
+        :param field_list:array	否	字段信息，数组元素为dict，例:field_name(字段名), field_type(字段类型), tag(字段类型, metirc -- 指标, dimension -- 维度)
+        :return:result
+        """
+        kwargs = {
+            "bk_token": self.bk_token,
+            "bk_biz_id": bk_biz_id,
+            "bk_data_id": bk_data_id,
+            "table_id": table_id,
+            "table_name_zh": table_name_zh,
+            "is_custom_table": is_custom_table,
+            "schema_type": schema_type,
+            "operator": operator,
+            "default_storage": default_storage,
+            "default_storage_config": default_storage_config,
+            "field_list": field_list
+        }
+
+        data = self.client.monitor.metadata_create_result_table(kwargs)
+        result = {"result": False, "message": "nothing", "table_id": ""}
+
+        if data.get("result", False):
+            result['result'] = data['result']
+            result['table_id'] = data['data']['table_id']
+
+        else:
+            logger.warning(
+                f"{get_now_time()} 创建监控结果表失败：{data['message']} 接口名称(metadata_create_result_table) 请求参数({kwargs}) 返回参数({data})")
+
+        result['message'] = data['message']
+
+        return result
+
+    def metadata_get_data_id(self, bk_data_id: int, data_name=""):
+        """
+        获取监控数据源具体信息
+        :param bk_data_id:int	否	数据源ID
+        :param data_name:string	否	数据源名称
+        :return:result
+        """
+        kwargs = {
+            "bk_token": self.bk_token,
+            "bk_data_id": bk_data_id,
+            "data_name": data_name,
+        }
+
+        data = self.client.monitor.metadata_get_data_id(kwargs)
+        result = {"result": False, "message": "nothing", "data": {}}
+        if data.get("result", False):
+            result['result'] = data['result']
+            result['data'] = data['data']
+        else:
+            logger.warning(
+                f"{get_now_time()} 获取监控数据源具体信息失败：{data['message']} 接口名称(metadata_get_data_id) 请求参数({kwargs}) 返回参数({data})")
+
+        result['message'] = data['message']
+
+        return result
+
+    def metadata_get_result_table(self, table_id: str):
+        """
+        获取监控结果表具体信息
+        :param table_id:string	是	结果表ID
+        :return:result
+        """
+        kwargs = {
+            "bk_token": self.bk_token,
+            "table_id": table_id,
+        }
+
+        data = self.client.monitor.metadata_get_result_table(kwargs)
+        result = {"result": False, "message": "nothing", "data": {}}
+
+        if data.get("result", False):
+            result['result'] = data['result']
+            result['data'] = data['data']
+        else:
+            logger.warning(
+                f"{get_now_time()} 获取监控结果表具体信息失败：{data['message']} 接口名称(metadata_get_result_table) 请求参数({kwargs}) 返回参数({data})")
+
+        result['message'] = data['message']
+
+        return result
+
+    def metadata_list_result_table(self, bk_biz_id: int, is_public_include=0, datasource_type=""):
+        """
+        查询监控结果表
+        :param bk_biz_id:int false	获取指定业务下的结果表信息
+        :param is_public_include:int false	是否包含全业务结果表, 0为不包含, 非0为包含全业务结果表
+        :param datasource_type:string false	需要过滤的结果表类型, 如system
+        :return:result
+        """
+        kwargs = {
+            "bk_token": self.bk_token,
+            "bk_biz_id": bk_biz_id,
+            "is_public_include": is_public_include,
+            "datasource_type": datasource_type
+        }
+
+        data = self.client.monitor.metadata_list_result_table(kwargs)
+        result = {"result": False, "message": "nothing", "data": []}
+
+        if data.get("result", False):
+            result['result'] = data['result']
+            result['data'] = data['data']
+        else:
+            logger.warning(
+                f"{get_now_time()} 查询监控结果表失败：{data['message']} 接口名称(metadata_list_result_table) 请求参数({kwargs}) 返回参数({data})")
+
+        result['message'] = data['message']
+
+        return result
+
+    def metadata_modify_result_table(self, table_id, table_name_zh, field_list, operator="admin",
+                                     default_storage="influxdb"):
+        """
+        修改监控结果表
+        :param table_id:string	是	结果表ID，格式应该为 库.表(例如，system.cpu)
+        :param table_name_zh:string	是	结果表中文名
+        :param operator:string	是	操作者
+        :param default_storage:string	是	默认存储类型，目前支持influxdb
+        :param field_list:array	否	字段信息，数组元素为dict，例:field_name(字段名), field_type(字段类型), tag(字段类型, metirc -- 指标, dimension -- 维度)
+        :return:result
+        """
+        kwargs = {
+            "bk_token": self.bk_token,
+            "table_id": table_id,
+            "operator": operator,
+            "field_list": field_list,
+            "table_name_zh": table_name_zh,
+            "default_storage": default_storage
+        }
+
+        data = self.client.monitor.metadata_modify_result_table(kwargs)
+        result = {"result": False, "message": "nothing", "data": {}}
+        if data.get("result", False):
+            result['result'] = data['result']
+            result['data'] = data['data']
+        else:
+            logger.warning(
+                f"{get_now_time()} 修改监控结果表失败：{data['message']} 接口名称(metadata_modify_result_table) 请求参数({kwargs}) 返回参数({data})")
+
+        result['message'] = data['message']
+
+        return result
+
+    def save_alarm_strategy(self, bk_biz_id: str, alarm_strategy_id: int, hostindex_id: str, solution_task_id="",
+                            ip=[],
+                            prform_cate="", cc_set=[], cc_module=[], topo=[], unit=None,
+                            rules={}, scenario="performance", is_enabled=None, nodata_alarm=0, is_classify_notice=False,
+                            alarm_level_config=dict, solution_is_enable=False, solution_type="job",
+                            solution_params_replace="", monitor_id=None,
+                            display_name=None, condition=[]):
+        """
+        创建/更新监控策略
+        :param solution_task_id:string	自动处理绑定的作业id
+        :param ip:list	监控的ip范围
+        :param prform_cate:string	ip/set/topo，监控范围的类型
+        :param cc_set:list	监控的集群范围
+        :param cc_module:list	监控的模块范围
+        :param topo:list	监控的业务拓扑范围
+        :param unit:string	监控项的单位
+        :param hostindex_id:string	主机指标ID(主机监控策略专用)
+        :param alarm_strategy_id:int	监控策略id，如果为0是创建，否则为更新
+        :param rules:dict	触发及收敛规则
+        :param scenario:string	监控场景(performance/log/custom/uptimecheck/dashboard-custom)
+        :param is_enabled:boolean	是否启用
+        :param bk_biz_id:int	业务ID
+        :param nodata_alarm:int	无数据告警配置，0为不开启
+        :param is_classify_notice:boolean	是否分级告警
+        :param alarm_level_config:dict	告警配置
+        :param solution_is_enable:boolean	是否开启接近自动处理
+        :param solution_type:string	自动处理类型，目前只有job
+        :param solution_params_replace:string	解决方案参数
+        :param monitor_id:int	监控项ID
+        :param display_name:string	策略名称
+        :param condition:list	匹配条件
+        :return:result
+        """
+        # kwargs = {
+        #     "bk_token": self.bk_token,
+        #     "bk_biz_id": bk_biz_id,
+        #     "alarm_strategy_id": alarm_strategy_id,
+        #     "hostindex_id": hostindex_id,
+        #     "scenario": scenario,
+        #     "prform_cate": prform_cate,
+        #     "is_classify_notice": is_classify_notice,
+        #     "ip": ip,
+        #     "cc_set": cc_set,
+        #     "cc_module": cc_module,
+        #     "topo": topo,
+        #     "condition": condition,
+        #     "solution_is_enable": solution_is_enable,
+        #     "rules": rules,
+        #     "nodata_alarm": nodata_alarm,
+        #     "solution_type": solution_type,
+        #     "solution_task_id": solution_task_id,
+        #     "solution_params_replace": solution_params_replace,
+        #     "alarm_level_config": alarm_level_config,
+        # }
+        kwargs={
+            # "alarm_strategy_id": 8,
+            "hostindex_id": "7",
+            "scenario": "performance",
+            "prform_cate": "topo",
+            # "is_classify_notice": False,
+            "ip": ["172.27.16.120"],
+            "cc_set": [23],
+            "cc_module": [124],
+            "topo": [
+                {
+                    "host_count": 0,
+                    "default": 0,
+                    "bk_obj_name": "业务",
+                    "bk_obj_id": "biz",
+                    "service_instance_count": 0,
+                    "child": [
+                        {
+                            "host_count": 0,
+                            "default": 0,
+                            "bk_obj_name": "集群",
+                            "bk_obj_id": "set",
+                            "service_instance_count": 0,
+                            "child": [
+                                {
+                                    "host_count": 0,
+                                    "default": 0,
+                                    "bk_obj_name": "模块",
+                                    "bk_obj_id": "module",
+                                    "service_instance_count": 0,
+                                    "child": [],
+                                    "service_template_id": 0,
+                                    "bk_inst_id": 124,
+                                    "bk_inst_name": "考试主机"
+                                }
+                            ],
+                            "service_template_id": 0,
+                            "bk_inst_id": 23,
+                            "bk_inst_name": "考试集群"
+                        }
+                    ],
+                    "service_template_id": 0,
+                    "bk_inst_id": 4,
+                    "bk_inst_name": "考试"
+                }
+            ],
+            # "condition": [
+            #     []
+            # ],
+            # "solution_is_enable": False,
+            # "rules": {
+            #     "check_window": 5,
+            #     "count": 3,
+            #     "alarm_window": 1440
+            # },
+            # "nodata_alarm": 0,
+            # "solution_type": "job",
+            # "solution_task_id": "",
+            # "solution_params_replace": "",
+            # "solution_notice": [],
+            "alarm_level_config": {
+                "1":{
+                    # "detect_algorithm": [
+                    #     {
+                    #         "algorithm_id": 1000,
+                    #         "config": {
+                    #             "threshold": 95,
+                    #             "message": "当前指标值(${metric|value}${metric|unit}) ${method} (${threshold}${metric|unit})",
+                    #             "method": "gte"
+                    #         }
+                    #     }
+                    # ],
+                    # "notify_way": [
+                    #     "mail"
+                    # ],
+                    # "role_list": [
+                    #     "Operator",
+                    #     "BakOperator"
+                    # ],
+                    # "monitor_level": 2,
+                    # "alarm_start_time": "00:00",
+                    # "alarm_end_time": "23:59",
+                    # "responsible": [],
+                    # "phone_receiver": [],
+                    # "is_recovery": False
+                }
+            },
+            "bk_biz_id": 4
+        }
+        # save_json("kwargs",kwargs)
+        data = self.client.monitor.save_alarm_strategy(kwargs)
+        result = {"result": False, "message": "nothing", "data": {}}
+        save_json("save_alarm_strategy", data)
+        if data.get("result", False):
+            result['result'] = data['result']
+        else:
+            logger.warning(
+                f"{get_now_time()} 创建/更新监控策略失败：{data['message']} 接口名称(save_alarm_strategy) 请求参数({kwargs}) 返回参数({data})")
+
+        result['message'] = data['message']
+
+        return result
 
 monitor_api = MONITOR_API("liujiqing")
 
