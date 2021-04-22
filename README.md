@@ -40,3 +40,6 @@ def get_now_time():
 
 logger.warning(f"{get_now_time()} xxx失败：{data['message']} 接口名称(xxx) 请求参数({kwargs}) 返回参数({data})")
 ```
+
+带有 todo 注释的 代表没有条件测试 <br>
+如果有描述 代表接口不通 待更新
