@@ -22,24 +22,18 @@ class BK_Client:
     def __init__(self,username):
         self.bk_token = ''
         self.client = get_client_by_user(username)
-        # self.cc = CC_API(self.bk_token, self.client)
-        # self.job = JOB_API
-        # self.sops = SOPS_API(self.bk_token, self.client)
-        # self.monitor = MONITOR_API(self.bk_token, self.client)
-
-        self.AVAILABLE_COLLECTIONS = {
-            'cc': CC_API,
-            'job': JOB_API,
-            'sops': SOPS_API,
-            'monitor': MONITOR_API
-        }
+        self.cc = CC_API(self.bk_token, self.client)
+        self.job = JOB_API(self.bk_token, self.client)
+        self.sops = SOPS_API(self.bk_token, self.client)
+        self.monitor = MONITOR_API(self.bk_token, self.client)
 
     def reload(self, bk_token, request):
         self.bk_token = bk_token
         self.client = get_client_by_request(request)
-
-    def __getattr__(self, item):
-        return self.AVAILABLE_COLLECTIONS[item](self.bk_token, self.client)
+        self.cc = CC_API(self.bk_token, self.client)
+        self.job = JOB_API(self.bk_token, self.client)
+        self.sops = SOPS_API(self.bk_token, self.client)
+        self.monitor = MONITOR_API(self.bk_token, self.client)
 
 
 bk_client = BK_Client("liujiqing")
