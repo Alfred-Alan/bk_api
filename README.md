@@ -19,7 +19,7 @@ result = bk_client.job.get_script_list()
 result = bk_client.sops.get_template_list()
 ```
 
-如果需要刷新链接 
+每次使用前需要刷新链接 
 
 ```python
 bk_token = request.COOKIES.get("bk_token")
