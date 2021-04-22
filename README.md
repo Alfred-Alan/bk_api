@@ -3,7 +3,7 @@
 目前最新ESB不支持蓝鲸监控API</br>
 
 已补全ESB组件
-链接：https://github.com/Alfred-Alan/blueking
+链接：https://github.com/Alfred-Alan/blueking/tree/v3
 
 
 使用方式
