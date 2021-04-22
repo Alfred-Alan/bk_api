@@ -37,7 +37,6 @@ class SOPS_API:
             "name": name,
             "constants": constants
         }
-
         data = self.client.sops.claim_functionalization_task(kwargs)
         result = {"result": False, 'message': 'Nothing', 'data': ""}
 
@@ -887,7 +886,7 @@ class SOPS_API:
         }
         # 删除参数空值项
         for param_key in list(kwargs.keys()):
-            if not kwargs[param_key] and kwargs[param_key] != 0:
+            if not kwargs[param_key]:
                 kwargs.pop(param_key)
 
         data = self.client.sops.operate_node(kwargs)

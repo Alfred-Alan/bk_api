@@ -231,7 +231,7 @@ class JOB_API:
 
         return result
 
-    def get_cron_detail(self, bk_biz_id: int, id, ):
+    def get_cron_detail(self, bk_biz_id: int, id):
 
         """
         查询定时作业详情
@@ -296,7 +296,7 @@ class JOB_API:
 
         # 删除参数空值项
         for param_key in list(kwargs.keys()):
-            if not kwargs[param_key] and kwargs[param_key] != 0:
+            if not kwargs[param_key]:
                 kwargs.pop(param_key)
         data = self.client.job.get_cron_list(kwargs)
         result = {"result": False, "message": "nothing", "data": []}
@@ -373,8 +373,8 @@ class JOB_API:
         """
         根据ip查询作业执行日志
         :param bk_biz_id:	业务 ID
-        :param create_time_start:创建起始时间，Unix 时间戳，单位毫秒
-        :param create_time_end:创建结束时间，Unix 时间戳，单位毫秒
+        :param create_time_start:创建起始时间字符串
+        :param create_time_end:创建结束时间字符串
         :param job_cron_id:任务实例ID。 如果出入job_instance_id，将忽略其他查询条件
         :param operator:执行人，精准匹配
         :param name:任务名称，模糊匹配
@@ -391,8 +391,8 @@ class JOB_API:
             "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
-            "create_time_start": create_time_start,
-            "create_time_end": create_time_end,
+            "create_time_start": unix_timestamp(create_time_start),
+            "create_time_end": unix_timestamp(create_time_end),
             "start": start,
             "length": length
         }
@@ -412,14 +412,16 @@ class JOB_API:
 
         # 删除参数空值项
         for param_key in list(kwargs.keys()):
-            if not kwargs[param_key] and kwargs[param_key] != 0:
+            if param_key =="start":
+                continue
+            if not kwargs[param_key]:
                 kwargs.pop(param_key)
-        print(kwargs)
+
         data = self.client.job.get_job_instance_list(kwargs)
 
         result = {'result': False, 'message': 'Nothing', 'data': []}
         if data.get("result"):
-            result['data'] = data['data']
+            result['data'] = data['data']['data']
             result['result'] = data['result']
             result['message'] = data['message']
         else:
@@ -538,7 +540,7 @@ class JOB_API:
         }
         # 删除参数空值项
         for param_key in list(kwargs.keys()):
-            if not kwargs[param_key] and kwargs[param_key] != 0:
+            if not kwargs[param_key]:
                 kwargs.pop(param_key)
 
         data = self.client.job.get_job_plan_list(kwargs)
@@ -578,7 +580,7 @@ class JOB_API:
 
         # 删除参数空值项
         for param_key in list(kwargs.keys()):
-            if not kwargs[param_key] and kwargs[param_key] != 0:
+            if not kwargs[param_key]:
                 kwargs.pop(param_key)
 
         data = self.client.job.get_job_template_list(kwargs)
@@ -613,7 +615,7 @@ class JOB_API:
 
         # 删除参数空值项
         for param_key in list(kwargs.keys()):
-            if not kwargs[param_key] and kwargs[param_key] != 0:
+            if not kwargs[param_key]:
                 kwargs.pop(param_key)
 
         data = self.client.job.get_public_script_list(kwargs)
@@ -652,7 +654,7 @@ class JOB_API:
 
         # 删除参数空值项
         for param_key in list(kwargs.keys()):
-            if not kwargs[param_key] and kwargs[param_key] != 0:
+            if not kwargs[param_key]:
                 kwargs.pop(param_key)
 
         data = self.client.job.get_public_script_version_detail(kwargs)
@@ -686,7 +688,7 @@ class JOB_API:
 
         # 删除参数空值项
         for param_key in list(kwargs.keys()):
-            if not kwargs[param_key] and kwargs[param_key] != 0:
+            if not kwargs[param_key]:
                 kwargs.pop(param_key)
 
         data = self.client.job.get_public_script_version_list(kwargs)
@@ -881,13 +883,12 @@ class JOB_API:
             "job_plan_id": job_plan_id,
             "name": name,
             "expression": expression,
-            "global_var_list": global_var_list,
-
+            "global_var_list": global_var_list
         }
 
         # 删除参数空值项
         for param_key in list(kwargs.keys()):
-            if not kwargs[param_key] and kwargs[param_key] != 0:
+            if not kwargs[param_key]:
                 kwargs.pop(param_key)
         data = self.client.job.save_cron(kwargs)
         result = {"result": False, "message": "nothing", "id": 0}
@@ -942,6 +943,10 @@ def make_stamp_time(timestamp):
     timearray = time.localtime(timestamp)
     return time.strftime("%Y-%m-%d %H:%M:%S", timearray)
 
-
 def get_now_time():
     return datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
+
+def unix_timestamp(time_str):
+    dt = datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
+    milliseconds = int(round(dt.timestamp() * 1000))
+    return milliseconds
