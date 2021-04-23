@@ -723,7 +723,6 @@ class JOB_API:
             "length": 100
         }
         data = self.client.job.get_script_list(kwargs)
-
         result = {"result": False, "message": "nothing", "data": []}
 
         if data.get("result", False):
@@ -735,7 +734,7 @@ class JOB_API:
         result['message'] = data['message']
         return result
 
-    def get_script_version_detail(self, bk_biz_id: int, id: int, script_id=None, version=None):
+    def get_script_version_detail(self, bk_biz_id: int, id= 0, script_id=None, version=None):
         """
         查询脚本详情
         :param bk_biz_id:
@@ -771,12 +770,14 @@ class JOB_API:
 
         return result
 
-    def get_script_version_list(self, bk_biz_id: int, script_id):
+    def get_script_version_list(self, bk_biz_id: int, script_id, start=0, length=100):
         """
         查询业务脚本版本列表
         :param bk_biz_id:
         :param id:
         :param script_id:
+        :param start:
+        :param length:
         :return:
         """
         kwargs = {
@@ -786,8 +787,8 @@ class JOB_API:
             "bk_biz_id": bk_biz_id,
             "script_id": script_id,
             "return_script_content": True,
-            "start": 0,
-            "length": 100
+            "start": start,
+            "length": length
         }
 
         data = self.client.job.get_script_version_list(kwargs)
