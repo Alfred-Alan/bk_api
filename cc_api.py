@@ -2028,6 +2028,10 @@ def save_json(filename, data):
 
 
 def make_topo(data):
+    """
+    注意！tree需要 list
+    此方法返回 dict
+    """
     for topo in data:
         chiled = []
 
