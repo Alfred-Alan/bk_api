@@ -9,10 +9,11 @@ from blueking.component.shortcuts import get_client_by_request, get_client_by_us
 from blueapps.utils.logger import logger
 
 
+
 class MONITOR_API:
-    def __init__(self, username):
-        self.bk_token = ''
-        self.client = get_client_by_user(username)
+    def __init__(self, bk_token, client):
+        self.bk_token = bk_token
+        self.client = client
 
     def reload(self, bk_token, request):
         self.bk_token = bk_token
@@ -51,9 +52,9 @@ class MONITOR_API:
             result['data']["alarm_content"] = data['data']['alarm_content']  # 告警内容
             result['data']["snap_alarm_source"] = data['data']['snap_alarm_source']  # 告警源配置快照
 
-            result['data']["begin_time"] = make_time(data['data']['begin_time'])  # 处理开始时间
-            result['data']["end_time"] = make_time(data['data']['end_time'])  # 处理结束时间
-            result['data']["source_time"] = make_time(data['data']['source_time'])  # 告警发生时间
+            result['data']["begin_time"] = make_monitor_time(data['data']['begin_time'])  # 处理开始时间
+            result['data']["end_time"] = make_monitor_time(data['data']['end_time'])  # 处理结束时间
+            result['data']["source_time"] = make_monitor_time(data['data']['source_time'])  # 告警发生时间
 
             result['data']["source_id"] = data['data']['source_id']  # 告警特征ID
             result['data']["event_id"] = data['data']['event_id']  # 关联事件ID
@@ -165,11 +166,13 @@ class MONITOR_API:
             "monitor_ids": monitor_ids
         }
         data = self.client.monitor.export_alarm_strategy(kwargs)
+        save_json("export_alarm_strategy",data)
         result = {"result": False, "message": "nothing"}
         if data.get("result", False):
             result['result'] = data['result']
             result['fail'] = data['data']['fail']
             result['success'] = data['data']['success']
+            result['data'] = data['data']['data']
         else:
             logger.warning(
                 f"{get_now_time()} 监控策略导出失败：{data['message']} 接口名称(export_alarm_strategy) 请求参数({kwargs}) 返回参数({data})")
@@ -302,7 +305,7 @@ class MONITOR_API:
         if data.get("result", False):
             result['result'] = data['result']
             for alarm in data['data']['result']:
-                alarm['source_time'] = make_time(alarm['source_time'])
+                alarm['source_time'] = make_monitor_time(alarm['source_time'])
                 result['data'].append(alarm)
         else:
             logger.warning(
@@ -379,7 +382,7 @@ class MONITOR_API:
         }
 
         data = self.client.monitor.import_alarm_strategy(kwargs)
-        result = {"result": False, "message": "nothing","fail":[],"success":[]}
+        result = {"result": False, "message": "nothing", "fail": [], "success": []}
         if data.get("result", False):
             result['result'] = data['result']
             result['fail'] = data['data']['fail']
@@ -405,7 +408,7 @@ class MONITOR_API:
         }
 
         data = self.client.monitor.import_log_collector(kwargs)
-        result = {"result": False, "message": "nothing","failed":{},"successed":{}}
+        result = {"result": False, "message": "nothing", "failed": {}, "successed": {}}
         if data.get("result", False):
             result['result'] = data['result']
             result['failed'] = data['data']['failed']
@@ -429,7 +432,7 @@ class MONITOR_API:
         }
 
         data = self.client.monitor.import_script_collector(kwargs)
-        result = {"result": False, "message": "nothing","failed":{},"success":{}}
+        result = {"result": False, "message": "nothing", "failed": {}, "success": {}}
         if data.get("result", False):
             result['result'] = data['result']
             result['failed'] = data['data']['failed']
@@ -453,7 +456,7 @@ class MONITOR_API:
         }
 
         data = self.client.monitor.import_uptime_check_node(kwargs)
-        result = {"result": False, "message": "nothing","failed":{},"success":{}}
+        result = {"result": False, "message": "nothing", "failed": {}, "success": {}}
         if data.get("result", False):
             result['result'] = data['result']
             result['failed'] = data['data']['failed']
@@ -465,7 +468,7 @@ class MONITOR_API:
 
         return result
 
-    def import_uptime_check_task(self, bk_biz_id:int,conf_list=[]):
+    def import_uptime_check_task(self, bk_biz_id: int, conf_list=[]):
         """
         导入拨测任务配置
         :param bk_biz_id:int 是	业务ID
@@ -479,7 +482,7 @@ class MONITOR_API:
         }
 
         data = self.client.monitor.import_uptime_check_task(kwargs)
-        result = {"result": False, "message": "nothing","failed":{},"success":{}}
+        result = {"result": False, "message": "nothing", "failed": {}, "success": {}}
         if data.get("result", False):
             result['result'] = data['result']
             result['failed'] = data['data']['failed']
@@ -541,9 +544,9 @@ class MONITOR_API:
                     "alarm_content": alarm['alarm_content'],  # 告警内容
                     "snap_alarm_source": alarm['snap_alarm_source'],  # 告警源配置快照
 
-                    "begin_time": make_time(alarm['begin_time']),  # 处理开始时间
-                    "end_time": make_time(alarm['end_time']),  # 处理结束时间
-                    "source_time": make_time(alarm['source_time']),  # 告警发生时间
+                    "begin_time": make_monitor_time(alarm['begin_time']),  # 处理开始时间
+                    "end_time": make_monitor_time(alarm['end_time']),  # 处理结束时间
+                    "source_time": make_monitor_time(alarm['source_time']),  # 告警发生时间
 
                     "source_id": alarm['source_id'],  # 告警特征ID
                     "event_id": alarm['event_id'],  # 关联事件ID
@@ -903,32 +906,34 @@ class MONITOR_API:
             # "solution_params_replace": "",
             # "solution_notice": [],
             "alarm_level_config": {
-                "1":{
-                    # "detect_algorithm": [
-                    #     {
-                    #         "algorithm_id": 1000,
-                    #         "config": {
-                    #             "threshold": 95,
-                    #             "message": "当前指标值(${metric|value}${metric|unit}) ${method} (${threshold}${metric|unit})",
-                    #             "method": "gte"
-                    #         }
-                    #     }
-                    # ],
-                    # "notify_way": [
-                    #     "mail"
-                    # ],
-                    # "role_list": [
-                    #     "Operator",
-                    #     "BakOperator"
-                    # ],
-                    # "monitor_level": 2,
-                    # "alarm_start_time": "00:00",
-                    # "alarm_end_time": "23:59",
-                    # "responsible": [],
-                    # "phone_receiver": [],
-                    # "is_recovery": False
-                }
-            },
+                    2: {
+                        "monitor_level": 2,
+                        "responsible": [],
+                        "notice_start_time": "00:00",
+                        "detect_algorithm": [
+                            {
+                                "config": {
+                                    "threshold": 95,
+                                    "message": "当前指标值(${metric|value}${metric|unit}) ${method} (${threshold}${metric|unit})",
+                                    "method": "gte"
+                                },
+                                "display": "当前值≥阈值:95%",
+                                "name": "静态阈值",
+                                "algorithm_id": 1000
+                            }
+                        ],
+                        "notice_end_time": "23:59",
+                        "phone_receiver": [],
+                        "notify_way": [
+                            "mail"
+                        ],
+                        "is_recovery": False,
+                        "role_list": [
+                            "Operator",
+                            "BakOperator"
+                        ]
+                    }
+                },
             "bk_biz_id": 4
         }
         # save_json("kwargs",kwargs)
@@ -945,8 +950,6 @@ class MONITOR_API:
 
         return result
 
-monitor_api = MONITOR_API("liujiqing")
-
 
 def save_json(filename, data):
     with open(f"{filename}.json", "w", encoding="utf-8")as f:
@@ -959,3 +962,6 @@ def make_time(time_str):
 
 def get_now_time():
     return datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
+
+def make_monitor_time(time_str):
+    return time_str[:time_str.rfind("+")]

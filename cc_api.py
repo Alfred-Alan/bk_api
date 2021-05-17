@@ -10,15 +10,15 @@ from blueapps.utils.logger import logger
 
 
 
+
 class CC_API:
-    def __init__(self,username):
-        self.bk_token = ''
-        self.client = get_client_by_user(username)
+    def __init__(self, bk_token, client):
+        self.bk_token = bk_token
+        self.client = client
 
     def reload(self, bk_token, request):
         self.bk_token = bk_token
         self.client = get_client_by_request(request)
-
 
     def search_business(self, condition={}):
         """
@@ -27,6 +27,8 @@ class CC_API:
         :return:
         """
         kwargs = {
+            "bk_app_code": app_code,
+            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "fields": [
                 "bk_biz_id",
@@ -42,7 +44,7 @@ class CC_API:
             result['result'] = data['result']
             result['data'] = data['data']['info']
         else:
-            logger.warning(f"{get_now_time()} 查询业务失败：{data['message']} 接口名称(search_business) 请求参数({kwargs}) 返回参数({data})")
+            logger.error("查询业务失败：%s" % data['message'])
 
         result['message'] = data['message']
 
@@ -54,6 +56,8 @@ class CC_API:
         """
 
         kwargs = {
+            "bk_app_code": app_code,
+            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "page": {
@@ -70,7 +74,7 @@ class CC_API:
             result["result"] = data['result']
             result["data"] = data['data']['info']
         else:
-            logger.warning(f"{get_now_time()} 获取业务下主机失败：{data['message']} 接口名称(list_biz_hosts) 请求参数({kwargs}) 返回参数({data})")
+            logger.error("获取业务下主机失败 %s" % data['message'])
 
         result['message'] = data['message']
 
@@ -85,6 +89,8 @@ class CC_API:
         :return:
         """
         kwargs = {
+            "bk_app_code": app_code,
+            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "condition": [
@@ -109,7 +115,7 @@ class CC_API:
             for i in data['data']['info']:
                 result['data'].append(i['host'])
         else:
-            logger.warning(f"{get_now_time()} 查询主机列表失败：{data['message']} 接口名称(search_host) 请求参数({kwargs}) 返回参数({data})")
+            logger.error(u'查询主机列表失败：%s' % result.get('message'))
 
         result['message'] = data['message']
         return result
@@ -121,6 +127,8 @@ class CC_API:
         :return:
         """
         kwargs = {
+            "bk_app_code": app_code,
+            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id
         }
@@ -130,7 +138,7 @@ class CC_API:
             result['result'] = data['result']
             result['data'] = [make_topo(data['data'])]
         else:
-            logger.warning(f"{get_now_time()} 获取业务实例拓扑失败：{data['message']} 接口名称(search_biz_inst_topo) 请求参数({kwargs}) 返回参数({data})")
+            logger.error("获取业务实例拓扑失败:%s", data['message'])
 
         result['message'] = data['message']
         return result
@@ -143,6 +151,8 @@ class CC_API:
         :return:
         """
         kwargs = {
+            "bk_app_code": app_code,
+            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "fields": [
@@ -158,7 +168,7 @@ class CC_API:
             result["result"] = data['result']
             result['data'] = data['data']['info']
         else:
-            logger.warning(f"{get_now_time()} 获取集群失败：{data['message']} 接口名称(search_set) 请求参数({kwargs}) 返回参数({data})")
+            logger.error("获取集群失败 %s" % data['message'])
 
         result['message'] = data['message']
         return result
@@ -172,6 +182,8 @@ class CC_API:
         :return:
         """
         kwargs = {
+            "bk_app_code": app_code,
+            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "bk_set_id": bk_set_id,
@@ -194,7 +206,7 @@ class CC_API:
             result["result"] = data['result']
             result['data'] = data['data']['info']
         else:
-            logger.warning(f"{get_now_time()} 获取模块失败：{data['message']} 接口名称(search_module) 请求参数({kwargs}) 返回参数({data})")
+            logger.error("获取模块失败 %s" % data['message'])
 
         result['message'] = data['message']
         return result
@@ -207,6 +219,8 @@ class CC_API:
         :return:
         """
         kwargs = {
+            "bk_app_code": app_code,
+            "bk_app_secret": app_secret,
             "bk_token": self.bk_token,
             "bk_biz_id": bk_biz_id,
             "bk_module_ids": [bk_module_id],
@@ -219,12 +233,10 @@ class CC_API:
             for i in data['data']['info']:
                 result['data'].append(i['host'])
         else:
-            logger.warning(f"{get_now_time()} 获取模块下主机失败：{data['message']} 接口名称(find_host_by_module) 请求参数({kwargs}) 返回参数({data})")
+            logger.error("获取模块下主机失败：%s" % data['message'])
         result['message'] = data['message']
         return result
 
-
-cc_api = CC_API("liujiqing")
 
 def save_json(filename, data):
     with open(f"{filename}.json", "w", encoding="utf-8")as f:
