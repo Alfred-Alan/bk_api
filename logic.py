@@ -6,6 +6,7 @@ from bk_api.job_api import JOB_API
 from bk_api.sops_api import SOPS_API
 from bk_api.monitor_api import MONITOR_API
 from bk_api.log_search_api import LogSearch_API
+from bk_api.usermanage_api import UserManage_API
 from blueking.component.shortcuts import get_client_by_request, get_client_by_user
 
 # celery 使用 ：https://www.cnblogs.com/wang-kai-xuan/p/11978849.html
@@ -28,6 +29,7 @@ class BK_Client:
         self.sops = SOPS_API(self.bk_token, self.client)
         self.monitor = MONITOR_API(self.bk_token, self.client)
         self.log_search = LogSearch_API(self.bk_token, self.client)
+        self.usermanage = UserManage_API(self.bk_token, self.client)
 
     def reload(self, bk_token, request):
         self.bk_token = bk_token
@@ -37,6 +39,7 @@ class BK_Client:
         self.sops = SOPS_API(self.bk_token, self.client)
         self.monitor = MONITOR_API(self.bk_token, self.client)
         self.log_search = LogSearch_API(self.bk_token, self.client)
+        self.usermanage = UserManage_API(self.bk_token, self.client)
 
 
 bk_client = BK_Client("liujiqing")
