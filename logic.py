@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 
 from bk_api.cc_api import CC_API
+from bk_api.iam_api import IAM_API
 from bk_api.job_api import JOB_API
 from bk_api.sops_api import SOPS_API
 from bk_api.monitor_api import MONITOR_API
@@ -10,7 +11,7 @@ from bk_api.usermanage_api import UserManage_API
 from blueking.component.shortcuts import get_client_by_request, get_client_by_user
 
 # celery 使用 ：https://www.cnblogs.com/wang-kai-xuan/p/11978849.html
-
+# typing-extensions==3.7.4.3
 # axios <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 
 # 账号
@@ -30,9 +31,10 @@ class BK_Client:
         self.monitor = MONITOR_API(self.bk_token, self.client)
         self.log_search = LogSearch_API(self.bk_token, self.client)
         self.usermanage = UserManage_API(self.bk_token, self.client)
+        self.iam = IAM_API(self.bk_token, self.client)
 
-    def reload(self, bk_token, request):
-        self.bk_token = bk_token
+    def reload(self, request):
+        self.bk_token = request.COOKIES.get("bk_token")
         self.client = get_client_by_request(request)
         self.cc = CC_API(self.bk_token, self.client)
         self.job = JOB_API(self.bk_token, self.client)
@@ -40,6 +42,7 @@ class BK_Client:
         self.monitor = MONITOR_API(self.bk_token, self.client)
         self.log_search = LogSearch_API(self.bk_token, self.client)
         self.usermanage = UserManage_API(self.bk_token, self.client)
+        self.iam = IAM_API(self.bk_token, self.client)
 
 
 bk_client = BK_Client("liujiqing")
